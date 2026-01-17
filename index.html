@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>FullHouseRD | Enterprise Control</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #C5A059; --dark: #121212; --bg: #f4f4f4; --white: #fff; }
+        body { font-family: 'Montserrat', sans-serif; margin: 0; background: var(--bg); color: var(--dark); }
+        
+        /* LOGIN */
+        #login-screen { position: fixed; inset: 0; background: var(--dark); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+        .login-box { background: white; padding: 40px; border-radius: 15px; border: 3px solid var(--gold); text-align: center; }
+
+        /* NAV */
+        nav { background: var(--dark); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; border-bottom: 2px solid var(--gold); }
+        .nav-links button { background: none; border: 1px solid var(--gold); color: var(--gold); padding: 8px 15px; cursor: pointer; margin: 0 5px; border-radius: 5px; font-weight: 600; }
+        .nav-links button:hover { background: var(--gold); color: white; }
+
+        .page { display: none; padding: 40px; max-width: 1300px; margin: auto; }
+        .active { display: block; }
+
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-top: 4px solid var(--gold); margin-bottom: 25px; }
+        .grid { display: grid; grid-template-columns: 450px 1fr; gap: 30px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; }
+        .btn-gold { background: var(--gold); color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 6px; text-transform: uppercase; }
+
+        /* FACTURA */
+        #factura-view { width: 210mm; background: white; padding: 20mm; margin: auto; color: black; border: 1px solid #eee; }
+        .f-logo { font-family: 'Playfair Display'; font-size: 35px; color: var(--gold); }
+        .editable:hover { background: #fffde7; outline: 1px dashed var(--gold); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background: var(--gold); color: white; padding: 10px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+
+        /* LOGS */
+        .log-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; }
+        .log-item span { font-weight: bold; color: var(--gold); }
+        .tag { padding: 2px 8px; border-radius: 10px; font-size: 10px; color: white; margin-right: 5px; }
+        .tag-login { background: #3498db; }
+        .tag-venta { background: #2ecc71; }
+        .tag-security { background: #e74c3c; }
+
+        /* PENDIENTES */
+        .task-list { margin-top: 15px; }
+        .task-card { display: flex; justify-content: space-between; padding: 12px; background: #fff; margin-bottom: 8px; border-radius: 8px; border-left: 4px solid var(--gold); }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-box">
+        <h1 style="font-family:'Playfair Display'; color:var(--gold)">FullHouseRD</h1>
+        <input type="text" id="user" placeholder="Usuario">
+        <input type="password" id="pass" placeholder="Contraseña">
+        <button class="btn-gold" onclick="handleLogin()">Iniciar Sesión</button>
+    </div>
+</div>
+
+<nav>
+    <div style="color:var(--gold); font-family:'Playfair Display'; font-size:24px;">FULLHOUSE<span style="color:white">RD</span></div>
+    <div class="nav-links">
+        <button onclick="nav('p-factura')">Facturar</button>
+        <button onclick="nav('p-inventario')">Inventario</button>
+        <button onclick="nav('p-ventas')">Ventas</button>
+        <button onclick="nav('p-tareas')">Pendientes</button>
+        <button onclick="nav('p-logs')" style="border-color: #e74c3c; color: #e74c3c;">Seguridad / Logs</button>
+    </div>
+</nav>
+
+<div id="p-factura" class="page active">
+    <div class="grid">
+        <div class="card">
+            <h2>Panel de Facturación</h2>
+            <label>Cliente</label>
+            <input type="text" id="in-cliente" oninput="sync()">
+            <label>Seleccionar Producto</label>
+            <select id="sel-prod" onchange="loadProd()"></select>
+            <label>Variante/Color</label>
+            <input type="text" id="in-color" oninput="sync()">
+            <input type="hidden" id="in-costo-h">
+            <button class="btn-gold" onclick="imprimir()">Descargar PDF</button>
+            <button class="btn-gold" style="background:#222; margin-top:10px;" onclick="registrarVenta()">Guardar y Registrar Venta</button>
+        </div>
+
+        <div id="factura-view">
+            <div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gold); padding-bottom:10px;">
+                <div class="f-logo">FullHouseRD</div>
+                <div style="text-align:right; font-size:11px;">
+                    <strong contenteditable="true" class="editable">INVERSIONES FULL HOUSE SRL</strong><br>
+                    RNC: <span contenteditable="true" class="editable">131-73678-5</span>
+                </div>
+            </div>
+            <div style="margin: 20px 0; display:flex; justify-content:space-between; font-size:12px;">
+                <div>
+                    <strong>CLIENTE:</strong> <span id="out-cliente" contenteditable="true" class="editable">---</span><br>
+                    <strong>FECHA:</strong> <span id="out-fecha" contenteditable="true" class="editable">--/--/----</span>
+                </div>
+                <div style="text-align:right">
+                    <strong>FACTURA:</strong> <span id="out-num">#FH-000</span><br>
+                    <strong>NCF:</strong> <span contenteditable="true" class="editable">B0200008733</span>
+                </div>
+            </div>
+            <table>
+                <thead><tr><th>PRODUCTO</th><th>COLOR</th><th>TOTAL</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td id="out-desc" contenteditable="true" class="editable">---</td>
+                        <td id="out-color" contenteditable="true" class="editable">---</td>
+                        <td style="text-align:right">RD$ <span id="out-precio" contenteditable="true" class="editable">0.00</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="float:right; font-size:22px; color:var(--gold); font-weight:bold;">TOTAL: RD$ <span id="out-total">0.00</span></div>
+        </div>
+    </div>
+</div>
+
+<div id="p-inventario" class="page">
+    <div class="card">
+        <h2>Gestión de Catálogo</h2>
+        <div class="grid">
+            <div>
+                <input type="text" id="p-nom" placeholder="Nombre">
+                <input type="number" id="p-pre-v" placeholder="Precio Venta RD$">
+                <input type="number" id="p-pre-c" placeholder="Precio Compra RD$">
+                <input type="text" id="p-col" placeholder="Colores">
+                <input type="text" id="p-img" placeholder="URL de Imagen">
+                <button class="btn-gold" onclick="addProd()">Agregar Producto</button>
+            </div>
+            <div id="cat-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="p-ventas" class="page">
+    <div class="card">
+        <h2>Reporte General de Ganancias</h2>
+        <table>
+            <thead><tr><th>Código</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Ganancia</th></tr></thead>
+            <tbody id="v-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="p-tareas" class="page">
+    <div class="card">
+        <h2>Lista de Pendientes</h2>
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="t-in" placeholder="Nueva tarea de entrega...">
+            <button class="btn-gold" style="width:150px" onclick="addTarea()">Añadir</button>
+        </div>
+        <h4 style="color:var(--gold)">⏳ PENDIENTES</h4>
+        <div id="t-pending" class="task-list"></div>
+        <h4 style="color:#2ecc71; margin-top:30px;">✅ COMPLETADAS</h4>
+        <div id="t-done" class="task-list"></div>
+    </div>
+</div>
+
+<div id="p-logs" class="page">
+    <div class="card">
+        <h2>Registro de Auditoría y Seguridad (Logs)</h2>
+        <div id="log-list" style="max-height: 600px; overflow-y: auto; background: #fff; padding: 10px;"></div>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURACIÓN SUPABASE ---
+    const SB_URL = "https://nkelcfhqnpcrejakvfpi.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rZWxjZmhxbnBjcmVqYWt2ZnBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MDI3MDUsImV4cCI6MjA4NDE3ODcwNX0.hWcpzsKVUtQ1zOk1GeG5fJuKKoXGM-vp-KHP5_3xUIQ";
+
+    // --- ESTADO LOCAL ---
+    let localDB = { productos: [], ventas: [], tareas: [], logs: [] };
+
+    // --- SEGURIDAD Y LOGIN ---
+    async function handleLogin() {
+        const u = document.getElementById('user').value;
+        const p = document.getElementById('pass').value;
+
+        if(u === 'fullhouserd' && p === 'admin') {
+            // Capturar información de seguridad
+            const ipData = await fetch('https://api.ipify.org?format=json').then(r => r.json());
+            const info = {
+                usuario: u,
+                accion: "INICIO DE SESIÓN",
+                detalles: `Acceso exitoso al panel administrativo.`,
+                ip: ipData.ip,
+                navegador: navigator.userAgent
+            };
+            
+            await fetchLog(info);
+            document.getElementById('login-screen').style.display = 'none';
+            loadAll();
+        } else {
+            alert("Acceso Denegado");
+        }
+    }
+
+    async function fetchLog(data) {
+        await fetch(`${SB_URL}/rest/v1/logs`, {
+            method: 'POST',
+            headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+    }
+
+    // --- CARGA DE DATOS ---
+    async function loadAll() {
+        const headers = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
+        
+        // Cargar Tablas
+        const [p, v, t, l] = await Promise.all([
+            fetch(`${SB_URL}/rest/v1/productos`, {headers}).then(r => r.json()),
+            fetch(`${SB_URL}/rest/v1/ventas?order=id.desc`, {headers}).then(r => r.json()),
+            fetch(`${SB_URL}/rest/v1/tareas`, {headers}).then(r => r.json()),
+            fetch(`${SB_URL}/rest/v1/logs?order=fecha.desc`, {headers}).then(r => r.json())
+        ]);
+
+        localDB = { prods: p, ventas: v, tareas: t, logs: l };
+        renderAll();
+    }
+
+    function renderAll() {
+        // Render Ventas
+        const vl = document.getElementById('v-list');
+        vl.innerHTML = "";
+        localDB.ventas.forEach(v => {
+            vl.innerHTML += `<tr><td>${v.codigo}</td><td>${v.fecha}</td><td>${v.cliente}</td><td>RD$ ${v.total.toLocaleString()}</td><td style="color:green">RD$ ${v.ganancia.toLocaleString()}</td></tr>`;
+        });
+
+        // Render Logs
+        const ll = document.getElementById('log-list');
+        ll.innerHTML = "";
+        localDB.logs.forEach(l => {
+            const tag = l.accion.includes("SESIÓN") ? "tag-login" : "tag-venta";
+            ll.innerHTML += `
+                <div class="log-item">
+                    <span class="tag ${tag}">${l.accion}</span>
+                    [${new Date(l.fecha).toLocaleString()}] - <b>${l.usuario}</b>: ${l.detalles} 
+                    <br><small style="color:#999">IP: ${l.ip} | Dispositivo: ${l.navegador}</small>
+                </div>`;
+        });
+
+        // Render Catálogo en el Select
+        const sel = document.getElementById('sel-prod');
+        sel.innerHTML = '<option value="">-- Seleccionar Mueble --</option>';
+        localDB.prods.forEach(p => {
+            sel.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+        });
+
+        // Render Tareas
+        const tp = document.getElementById('t-pending');
+        const td = document.getElementById('t-done');
+        tp.innerHTML = ""; td.innerHTML = "";
+        localDB.tareas.forEach(t => {
+            const html = `<div class="task-card"><span>${t.texto}</span><div>
+                <button onclick="toggleT(${t.id}, ${t.completada})">${t.completada ? '↩️' : '✔️'}</button>
+                <button onclick="delT(${t.id})">🗑️</button>
+            </div></div>`;
+            t.completada ? td.innerHTML += html : tp.innerHTML += html;
+        });
+    }
+
+    // --- ACCIONES ---
+    function nav(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        loadAll(); // Recargar al cambiar de pestaña
+    }
+
+    async function registrarVenta() {
+        const v = {
+            codigo: document.getElementById('out-num').innerText,
+            fecha: document.getElementById('out-fecha').innerText,
+            cliente: document.getElementById('out-cliente').innerText,
+            total: parseFloat(document.getElementById('out-total').innerText.replace(/,/g,'')),
+            ganancia: parseFloat(document.getElementById('out-total').innerText.replace(/,/g,'')) - parseFloat(document.getElementById('in-costo-h').value || 0)
+        };
+
+        await fetch(`${SB_URL}/rest/v1/ventas`, {
+            method: 'POST',
+            headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(v)
+        });
+
+        await fetchLog({
+            usuario: "fullhouserd",
+            accion: "VENTA REGISTRADA",
+            detalles: `Factura ${v.codigo} para ${v.cliente} por RD$ ${v.total}`,
+            ip: "Sistema Interno", navegador: "Dashboard"
+        });
+
+        alert("Venta guardada en la nube.");
+        loadAll();
+    }
+
+    function sync() {
+        document.getElementById('out-cliente').innerText = document.getElementById('in-cliente').value.toUpperCase();
+        document.getElementById('out-color').innerText = document.getElementById('in-color').value.toUpperCase();
+        document.getElementById('out-fecha').innerText = new Date().toLocaleDateString();
+        document.getElementById('out-num').innerText = "#FH-" + (localDB.ventas.length + 101);
+    }
+
+    function loadProd() {
+        const p = localDB.prods.find(x => x.id == document.getElementById('sel-prod').value);
+        if(p) {
+            document.getElementById('out-desc').innerText = p.nombre.toUpperCase();
+            document.getElementById('out-precio').innerText = p.precio_venta.toLocaleString();
+            document.getElementById('out-total').innerText = p.precio_venta.toLocaleString();
+            document.getElementById('in-costo-h').value = p.precio_compra;
+        }
+    }
+
+    function imprimir() {
+        const el = document.getElementById('factura-view');
+        html2pdf().from(el).set({ margin:0, filename:'FullHouse_Factura.pdf', html2canvas:{scale:3}, jsPDF:{format:'a4'} }).save();
+    }
+</script>
+</body>
+</html>
