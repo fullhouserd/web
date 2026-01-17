@@ -1,320 +1,1086 @@
-<!DOCTYPE html>
+v<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>FullHouseRD | Enterprise Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FullHouseRD | Enterprise Suite 2026</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --gold: #C5A059; --dark: #121212; --bg: #f4f4f4; --white: #fff; }
-        body { font-family: 'Montserrat', sans-serif; margin: 0; background: var(--bg); color: var(--dark); }
-        
-        /* LOGIN */
-        #login-screen { position: fixed; inset: 0; background: var(--dark); z-index: 10000; display: flex; justify-content: center; align-items: center; }
-        .login-box { background: white; padding: 40px; border-radius: 15px; border: 3px solid var(--gold); text-align: center; }
+        :root { 
+            --gold: #C5A059; 
+            --dark: #121212; 
+            --light-gold: #e5c17e;
+            --bg: #fdfdfd; 
+        }
 
-        /* NAV */
-        nav { background: var(--dark); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; border-bottom: 2px solid var(--gold); }
-        .nav-links button { background: none; border: 1px solid var(--gold); color: var(--gold); padding: 8px 15px; cursor: pointer; margin: 0 5px; border-radius: 5px; font-weight: 600; }
-        .nav-links button:hover { background: var(--gold); color: white; }
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--dark); 
+            overflow-x: hidden;
+        }
 
-        .page { display: none; padding: 40px; max-width: 1300px; margin: auto; }
+        /* --- PANTALLA DE LOGIN --- */
+        #login-screen { 
+            position: fixed; 
+            inset: 0; 
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%); 
+            z-index: 10000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .login-box { 
+            background: white; 
+            padding: 50px; 
+            border-radius: 20px; 
+            border: 2px solid var(--gold); 
+            text-align: center; 
+            width: 380px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        /* --- NAVEGACIÓN --- */
+        nav { 
+            background: var(--dark); 
+            padding: 15px 40px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 999; 
+            border-bottom: 3px solid var(--gold); 
+        }
+
+        .nav-logo { 
+            color: var(--gold); 
+            font-family: 'Playfair Display'; 
+            font-size: 28px; 
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .nav-links button { 
+            background: transparent; 
+            border: 1px solid var(--gold); 
+            color: var(--gold); 
+            padding: 10px 18px; 
+            cursor: pointer; 
+            margin-left: 10px; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 12px; 
+            transition: all 0.3s ease;
+        }
+
+        .nav-links button:hover { 
+            background: var(--gold); 
+            color: white; 
+        }
+
+        /* --- ESTRUCTURA DE PÁGINAS --- */
+        .page { display: none; padding: 40px; max-width: 1500px; margin: auto; animation: slideUp 0.5s ease; }
         .active { display: block; }
 
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-top: 4px solid var(--gold); margin-bottom: 25px; }
-        .grid { display: grid; grid-template-columns: 450px 1fr; gap: 30px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; }
-        .btn-gold { background: var(--gold); color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 6px; text-transform: uppercase; }
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
 
-        /* FACTURA */
-        #factura-view { width: 210mm; background: white; padding: 20mm; margin: auto; color: black; border: 1px solid #eee; }
-        .f-logo { font-family: 'Playfair Display'; font-size: 35px; color: var(--gold); }
-        .editable:hover { background: #fffde7; outline: 1px dashed var(--gold); }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: var(--gold); color: white; padding: 10px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
+        .card { 
+            background: white; 
+            padding: 35px; 
+            border-radius: 15px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08); 
+            border-top: 6px solid var(--gold); 
+        }
 
-        /* LOGS */
-        .log-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; }
-        .log-item span { font-weight: bold; color: var(--gold); }
-        .tag { padding: 2px 8px; border-radius: 10px; font-size: 10px; color: white; margin-right: 5px; }
-        .tag-login { background: #3498db; }
-        .tag-venta { background: #2ecc71; }
-        .tag-security { background: #e74c3c; }
+        .grid-layout { display: grid; grid-template-columns: 420px 1fr; gap: 40px; }
 
-        /* PENDIENTES */
-        .task-list { margin-top: 15px; }
-        .task-card { display: flex; justify-content: space-between; padding: 12px; background: #fff; margin-bottom: 8px; border-radius: 8px; border-left: 4px solid var(--gold); }
+        input, select, textarea { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 12px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 10px; 
+            box-sizing: border-box;
+            font-family: 'Montserrat';
+        }
+
+        .btn-action { 
+            background: var(--gold); 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            cursor: pointer; 
+            font-weight: bold; 
+            border-radius: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        /* --- DISEÑO DE LA FACTURA --- */
+#factura-container { 
+    width: 210mm; 
+    min-height: 250mm; /* Bajamos de 270 a 250 para dar aire abajo */
+    background: white; 
+    padding: 10mm 15mm; /* Reducimos el margen superior/inferior */
+    margin: auto; 
+    color: black; 
+    box-sizing: border-box;
+    overflow: hidden; /* Evita que crezca de más por error */
+}
+
+        .f-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            border-bottom: 3px solid var(--gold); 
+            padding-bottom: 25px; 
+        }
+
+        .f-logo-text { font-family: 'Playfair Display'; font-size: 45px; color: var(--gold); margin: 0; }
+
+        .editable { padding: 3px; border-radius: 4px; transition: 0.2s; }
+        .editable:hover { background: #fffbe6; outline: 1px dashed var(--gold); cursor: pointer; }
+
+        .f-table { width: 100%; border-collapse: collapse; margin: 40px 0; }
+        .f-table th { background: var(--gold); color: white; padding: 15px; text-align: left; font-size: 13px; letter-spacing: 1px; }
+        .f-table td { padding: 20px 15px; border-bottom: 1px solid #eee; font-size: 15px; vertical-align: top; }
+
+        /* --- SISTEMA DE COLORES RGB --- */
+        .color-selector { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+        .color-bubble { 
+            width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; transition: 0.3s;
+        }
+        .color-bubble:hover { transform: scale(1.2); }
+        .color-tag { 
+            background: #f0f0f0; padding: 6px 12px; border-radius: 20px; font-size: 11px;
+            display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid #ddd;
+        }
+
+        /* --- LOGS DE SEGURIDAD --- */
+        .security-terminal { 
+            background: #0a0a0a; color: #00ff41; padding: 25px; border-radius: 12px; 
+            font-family: 'Courier New', monospace; font-size: 12px; max-height: 550px; 
+            overflow-y: auto; border: 1px solid #333; line-height: 1.6;
+        }
+        .log-line { border-bottom: 1px solid #1a1a1a; padding: 12px 0; }
+        .log-line b { color: var(--gold); }
+
+        /* --- INVENTARIO --- */
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+        .product-card { 
+            background: white; border-radius: 15px; overflow: hidden; border: 1px solid #eee;
+            transition: 0.3s; position: relative;
+        }
+        .product-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .prod-img { width: 100%; height: 220px; object-fit: cover; background: #fafafa; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
     <div class="login-box">
-        <h1 style="font-family:'Playfair Display'; color:var(--gold)">FullHouseRD</h1>
-        <input type="text" id="user" placeholder="Usuario">
-        <input type="password" id="pass" placeholder="Contraseña">
-        <button class="btn-gold" onclick="handleLogin()">Iniciar Sesión</button>
+        <h1 style="font-family:'Playfair Display'; color:var(--gold); margin:0">FullHouseRD</h1>
+        <p style="letter-spacing: 3px; font-size: 10px; color: #888; margin-top: 5px;">SISTEMA DE CONTROL 2026</p>
+        <div style="margin-top: 30px;">
+            <input type="text" id="user-input" placeholder="Nombre de Usuario">
+            <input type="password" id="pass-input" placeholder="Contraseña">
+            <button class="btn-action" onclick="attemptLogin()">Iniciar Sesión</button>
+        </div>
     </div>
 </div>
 
 <nav>
-    <div style="color:var(--gold); font-family:'Playfair Display'; font-size:24px;">FULLHOUSE<span style="color:white">RD</span></div>
+    <div class="nav-logo">FullHouse<span style="color:white">RD</span></div>
     <div class="nav-links">
-        <button onclick="nav('p-factura')">Facturar</button>
-        <button onclick="nav('p-inventario')">Inventario</button>
-        <button onclick="nav('p-ventas')">Ventas</button>
-        <button onclick="nav('p-tareas')">Pendientes</button>
-        <button onclick="nav('p-logs')" style="border-color: #e74c3c; color: #e74c3c;">Seguridad / Logs</button>
+        <button onclick="switchPage('p-facturacion')">Ventas/Factura</button>
+        <button onclick="switchPage('p-crear')">+ Nuevo Producto</button>
+        <button onclick="switchPage('p-stock')">Inventario</button>
+        <button onclick="switchPage('p-logs')" style="border-color: #ff4444; color: #ff4444;">Seguridad</button>
     </div>
 </nav>
 
-<div id="p-factura" class="page active">
-    <div class="grid">
+<div id="p-facturacion" class="page active">
+    <div class="grid-layout">
         <div class="card">
-            <h2>Panel de Facturación</h2>
-            <label>Cliente</label>
-            <input type="text" id="in-cliente" oninput="sync()">
-            <label>Seleccionar Producto</label>
-            <select id="sel-prod" onchange="loadProd()"></select>
-            <label>Variante/Color</label>
-            <input type="text" id="in-color" oninput="sync()">
-            <input type="hidden" id="in-costo-h">
-            <button class="btn-gold" onclick="imprimir()">Descargar PDF</button>
-            <button class="btn-gold" style="background:#222; margin-top:10px;" onclick="registrarVenta()">Guardar y Registrar Venta</button>
+            <h2 style="font-family:'Playfair Display'">Panel de Control</h2>
+            <label>Nombre del Cliente</label>
+            <input type="text" id="in-client" oninput="updateFactura()" placeholder="Ej: Juan Pérez">
+            
+            <label>Seleccionar del Catálogo</label>
+            <select id="select-catalog" onchange="pullProductData()"></select>
+            
+            <div id="fact-color-options" class="color-selector"></div>
+            
+            <input type="hidden" id="hidden-cost">
+            
+            <button class="btn-action" onclick="exportPDF()">Generar PDF Profesional</button>
+            <button class="btn-action" style="background:#222;" onclick="saveTransaction()">Registrar en Base de Datos</button>
         </div>
 
-        <div id="factura-view">
-            <div style="display:flex; justify-content:space-between; border-bottom:2px solid var(--gold); padding-bottom:10px;">
-                <div class="f-logo">FullHouseRD</div>
-                <div style="text-align:right; font-size:11px;">
+        <div id="factura-container">
+            <div class="f-header">
+                <div>
+                    <h1 class="f-logo-text">FullHouseRD</h1>
+                    <div contenteditable="true" class="editable" style="letter-spacing: 4px; font-size: 11px;">MUEBLES & INTERIORISMO</div>
+                </div>
+                <div style="text-align:right; font-size:12px; line-height: 1.6;">
                     <strong contenteditable="true" class="editable">INVERSIONES FULL HOUSE SRL</strong><br>
-                    RNC: <span contenteditable="true" class="editable">131-73678-5</span>
+                    RNC: <span contenteditable="true" class="editable">131-73678-5</span><br>
+                    <span contenteditable="true" class="editable">Santo Domingo, República Dominicana</span>
                 </div>
             </div>
-            <div style="margin: 20px 0; display:flex; justify-content:space-between; font-size:12px;">
+
+            <div style="margin: 50px 0; display: flex; justify-content: space-between; font-size: 14px;">
                 <div>
-                    <strong>CLIENTE:</strong> <span id="out-cliente" contenteditable="true" class="editable">---</span><br>
-                    <strong>FECHA:</strong> <span id="out-fecha" contenteditable="true" class="editable">--/--/----</span>
+                    <strong>CLIENTE:</strong> <span id="out-client" contenteditable="true" class="editable" style="text-transform: uppercase;">---</span><br>
+                    <strong>FECHA:</strong> <span id="out-date" contenteditable="true" class="editable">--/--/----</span>
                 </div>
-                <div style="text-align:right">
-                    <strong>FACTURA:</strong> <span id="out-num">#FH-000</span><br>
+                <div style="text-align: right;">
+                    <strong>FACTURA:</strong> <span id="out-id" contenteditable="true" class="editable">#FH-100</span><br>
                     <strong>NCF:</strong> <span contenteditable="true" class="editable">B0200008733</span>
                 </div>
             </div>
-            <table>
-                <thead><tr><th>PRODUCTO</th><th>COLOR</th><th>TOTAL</th></tr></thead>
+
+            <table class="f-table">
+                <thead>
+                    <tr>
+                        <th style="width: 65%;">DESCRIPCIÓN DEL ARTÍCULO</th>
+                        <th style="text-align: right;">TOTAL RD$</th>
+                    </tr>
+                </thead>
                 <tbody>
                     <tr>
-                        <td id="out-desc" contenteditable="true" class="editable">---</td>
-                        <td id="out-color" contenteditable="true" class="editable">---</td>
-                        <td style="text-align:right">RD$ <span id="out-precio" contenteditable="true" class="editable">0.00</span></td>
+                        <td>
+                            <div id="out-prod-name" contenteditable="true" class="editable" style="font-weight: bold; font-size: 18px;">SELECCIONE PRODUCTO</div>
+                            <div id="out-prod-detail" contenteditable="true" class="editable" style="color: #666; font-size: 13px; margin-top: 5px;">Detalles adicionales, dimensiones o color...</div>
+                        </td>
+                        <td style="text-align: right; font-weight: bold; font-size: 20px;">
+                            RD$ <span id="out-price" contenteditable="true" class="editable" oninput="recalcTotal()">0.00</span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
-            <div style="float:right; font-size:22px; color:var(--gold); font-weight:bold;">TOTAL: RD$ <span id="out-total">0.00</span></div>
+
+<div style="float: right; text-align: right; width: 100%;">
+    <div style="font-size: 30px; color: var(--gold); font-weight: bold; margin-top: 10px;">
+        TOTAL: RD$ <span id="out-total">0.00</span>
+    </div>
+</div>
+
+<div style="clear: both; margin-top: 50px;"> <div contenteditable="true" class="editable" style="font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px;">
+        NOTAS: Garantía de 1 año. No se aceptan devoluciones en pedidos especiales.
+    </div>
+    <div class="signature-space" style="margin-top: 40px; border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px; font-size: 13px;">
+        Firma Autorizada
+    </div>
+</div>
         </div>
     </div>
 </div>
 
-<div id="p-inventario" class="page">
-    <div class="card">
-        <h2>Gestión de Catálogo</h2>
-        <div class="grid">
-            <div>
-                <input type="text" id="p-nom" placeholder="Nombre">
-                <input type="number" id="p-pre-v" placeholder="Precio Venta RD$">
-                <input type="number" id="p-pre-c" placeholder="Precio Compra RD$">
-                <input type="text" id="p-col" placeholder="Colores">
-                <input type="text" id="p-img" placeholder="URL de Imagen">
-                <button class="btn-gold" onclick="addProd()">Agregar Producto</button>
+<div id="p-crear" class="page">
+    <div class="card" style="max-width: 650px; margin: auto;">
+        <h2 style="font-family:'Playfair Display'">Registro de Nuevo Artículo</h2>
+        <input type="text" id="reg-name" placeholder="Nombre del Mueble (Ej: Sofa Chesterfield)">
+        <input type="number" id="reg-price-v" placeholder="Precio de Venta (RD$)">
+        <input type="number" id="reg-price-c" placeholder="Costo de Adquisición (RD$)">
+        <input type="text" id="reg-img" placeholder="URL de la imagen (Web)">
+        
+        <div style="margin-top: 20px;">
+            <label><strong>Selector de Colores (Hasta 10):</strong></label>
+            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <input type="color" id="color-picker" style="width: 100px; height: 50px; cursor: pointer; border: none; background: none;">
+                <button class="btn-action" style="width: auto; padding: 0 30px;" onclick="addColorToTemp()">Añadir Color</button>
             </div>
-            <div id="cat-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"></div>
+            <div id="temp-colors-box" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;"></div>
         </div>
+
+        <button class="btn-action" style="margin-top: 30px;" onclick="uploadProduct()">Guardar en el Inventario Cloud</button>
     </div>
 </div>
 
-<div id="p-ventas" class="page">
-    <div class="card">
-        <h2>Reporte General de Ganancias</h2>
-        <table>
-            <thead><tr><th>Código</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Ganancia</th></tr></thead>
-            <tbody id="v-list"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="p-tareas" class="page">
-    <div class="card">
-        <h2>Lista de Pendientes</h2>
-        <div style="display:flex; gap:10px;">
-            <input type="text" id="t-in" placeholder="Nueva tarea de entrega...">
-            <button class="btn-gold" style="width:150px" onclick="addTarea()">Añadir</button>
-        </div>
-        <h4 style="color:var(--gold)">⏳ PENDIENTES</h4>
-        <div id="t-pending" class="task-list"></div>
-        <h4 style="color:#2ecc71; margin-top:30px;">✅ COMPLETADAS</h4>
-        <div id="t-done" class="task-list"></div>
-    </div>
+<div id="p-stock" class="page">
+    <h2 style="font-family:'Playfair Display'; margin-bottom: 30px;">Inventario en Tiempo Real</h2>
+    <div id="inventory-container" class="inventory-grid"></div>
 </div>
 
 <div id="p-logs" class="page">
     <div class="card">
-        <h2>Registro de Auditoría y Seguridad (Logs)</h2>
-        <div id="log-list" style="max-height: 600px; overflow-y: auto; background: #fff; padding: 10px;"></div>
+        <h2 style="font-family:'Playfair Display'">Terminal de Auditoría y Seguridad</h2>
+        <div id="security-log" class="security-terminal"></div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURACIÓN SUPABASE ---
-    const SB_URL = "https://nkelcfhqnpcrejakvfpi.supabase.co";
-    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rZWxjZmhxbnBjcmVqYWt2ZnBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MDI3MDUsImV4cCI6MjA4NDE3ODcwNX0.hWcpzsKVUtQ1zOk1GeG5fJuKKoXGM-vp-KHP5_3xUIQ";
+    // --- CREDENCIALES SUPABASE ---
+    const SB_URL = "https://nkelcfhqnpcrejakvfpi.supabase.co"; 
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rZWxjZmhxbnBjcmVqYWt2ZnBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MDI3MDUsImV4cCI6MjA4NDE3ODcwNX0.hWcpzsKVUtQ1zOk1GeG5fJuKKoXGM-vp-KHP5_3xUIQ"; // Asegúrate de poner tu llave real aquí
 
-    // --- ESTADO LOCAL ---
-    let localDB = { productos: [], ventas: [], tareas: [], logs: [] };
+    let appData = { products: [], sales: [], logs: [] };
+    let selectedColors = [];
 
     // --- SEGURIDAD Y LOGIN ---
-    async function handleLogin() {
-        const u = document.getElementById('user').value;
-        const p = document.getElementById('pass').value;
+    async function attemptLogin() {
+        const u = document.getElementById('user-input').value;
+        const p = document.getElementById('pass-input').value;
 
         if(u === 'fullhouserd' && p === 'admin') {
-            // Capturar información de seguridad
-            const ipData = await fetch('https://api.ipify.org?format=json').then(r => r.json());
-            const info = {
-                usuario: u,
-                accion: "INICIO DE SESIÓN",
-                detalles: `Acceso exitoso al panel administrativo.`,
-                ip: ipData.ip,
-                navegador: navigator.userAgent
-            };
-            
-            await fetchLog(info);
             document.getElementById('login-screen').style.display = 'none';
-            loadAll();
+            await registerSecurityLog("LOGIN EXITOSO", u);
+            loadCloudData();
         } else {
-            alert("Acceso Denegado");
+            alert("Acceso No Autorizado");
         }
     }
 
-    async function fetchLog(data) {
-        await fetch(`${SB_URL}/rest/v1/logs`, {
-            method: 'POST',
-            headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
+    async function registerSecurityLog(action, user) {
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            const geo = await response.json();
+            
+            const logEntry = {
+                usuario: user,
+                accion: action,
+                detalles: `País: ${geo.country_name}, Región: ${geo.region}, Ciudad: ${geo.city}, ISP: ${geo.org}, Disp: ${navigator.platform}`,
+                ip: geo.ip
+            };
+
+            await fetch(`${SB_URL}/rest/v1/logs`, {
+                method: 'POST',
+                headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(logEntry)
+            });
+        } catch (e) {
+            console.warn("Log local activado - Error de conexión nube");
+        }
     }
 
     // --- CARGA DE DATOS ---
-    async function loadAll() {
+    async function loadCloudData() {
         const headers = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
-        
-        // Cargar Tablas
-        const [p, v, t, l] = await Promise.all([
-            fetch(`${SB_URL}/rest/v1/productos`, {headers}).then(r => r.json()),
-            fetch(`${SB_URL}/rest/v1/ventas?order=id.desc`, {headers}).then(r => r.json()),
-            fetch(`${SB_URL}/rest/v1/tareas`, {headers}).then(r => r.json()),
-            fetch(`${SB_URL}/rest/v1/logs?order=fecha.desc`, {headers}).then(r => r.json())
-        ]);
-
-        localDB = { prods: p, ventas: v, tareas: t, logs: l };
-        renderAll();
-    }
-
-    function renderAll() {
-        // Render Ventas
-        const vl = document.getElementById('v-list');
-        vl.innerHTML = "";
-        localDB.ventas.forEach(v => {
-            vl.innerHTML += `<tr><td>${v.codigo}</td><td>${v.fecha}</td><td>${v.cliente}</td><td>RD$ ${v.total.toLocaleString()}</td><td style="color:green">RD$ ${v.ganancia.toLocaleString()}</td></tr>`;
-        });
-
-        // Render Logs
-        const ll = document.getElementById('log-list');
-        ll.innerHTML = "";
-        localDB.logs.forEach(l => {
-            const tag = l.accion.includes("SESIÓN") ? "tag-login" : "tag-venta";
-            ll.innerHTML += `
-                <div class="log-item">
-                    <span class="tag ${tag}">${l.accion}</span>
-                    [${new Date(l.fecha).toLocaleString()}] - <b>${l.usuario}</b>: ${l.detalles} 
-                    <br><small style="color:#999">IP: ${l.ip} | Dispositivo: ${l.navegador}</small>
-                </div>`;
-        });
-
-        // Render Catálogo en el Select
-        const sel = document.getElementById('sel-prod');
-        sel.innerHTML = '<option value="">-- Seleccionar Mueble --</option>';
-        localDB.prods.forEach(p => {
-            sel.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
-        });
-
-        // Render Tareas
-        const tp = document.getElementById('t-pending');
-        const td = document.getElementById('t-done');
-        tp.innerHTML = ""; td.innerHTML = "";
-        localDB.tareas.forEach(t => {
-            const html = `<div class="task-card"><span>${t.texto}</span><div>
-                <button onclick="toggleT(${t.id}, ${t.completada})">${t.completada ? '↩️' : '✔️'}</button>
-                <button onclick="delT(${t.id})">🗑️</button>
-            </div></div>`;
-            t.completada ? td.innerHTML += html : tp.innerHTML += html;
-        });
-    }
-
-    // --- ACCIONES ---
-    function nav(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        loadAll(); // Recargar al cambiar de pestaña
-    }
-
-    async function registrarVenta() {
-        const v = {
-            codigo: document.getElementById('out-num').innerText,
-            fecha: document.getElementById('out-fecha').innerText,
-            cliente: document.getElementById('out-cliente').innerText,
-            total: parseFloat(document.getElementById('out-total').innerText.replace(/,/g,'')),
-            ganancia: parseFloat(document.getElementById('out-total').innerText.replace(/,/g,'')) - parseFloat(document.getElementById('in-costo-h').value || 0)
-        };
-
-        await fetch(`${SB_URL}/rest/v1/ventas`, {
-            method: 'POST',
-            headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(v)
-        });
-
-        await fetchLog({
-            usuario: "fullhouserd",
-            accion: "VENTA REGISTRADA",
-            detalles: `Factura ${v.codigo} para ${v.cliente} por RD$ ${v.total}`,
-            ip: "Sistema Interno", navegador: "Dashboard"
-        });
-
-        alert("Venta guardada en la nube.");
-        loadAll();
-    }
-
-    function sync() {
-        document.getElementById('out-cliente').innerText = document.getElementById('in-cliente').value.toUpperCase();
-        document.getElementById('out-color').innerText = document.getElementById('in-color').value.toUpperCase();
-        document.getElementById('out-fecha').innerText = new Date().toLocaleDateString();
-        document.getElementById('out-num').innerText = "#FH-" + (localDB.ventas.length + 101);
-    }
-
-    function loadProd() {
-        const p = localDB.prods.find(x => x.id == document.getElementById('sel-prod').value);
-        if(p) {
-            document.getElementById('out-desc').innerText = p.nombre.toUpperCase();
-            document.getElementById('out-precio').innerText = p.precio_venta.toLocaleString();
-            document.getElementById('out-total').innerText = p.precio_venta.toLocaleString();
-            document.getElementById('in-costo-h').value = p.precio_compra;
+        try {
+            const [p, s, l] = await Promise.all([
+                fetch(`${SB_URL}/rest/v1/productos?order=id.desc`, {headers}).then(r => r.json()),
+                fetch(`${SB_URL}/rest/v1/ventas?order=id.desc`, {headers}).then(r => r.json()),
+                fetch(`${SB_URL}/rest/v1/logs?order=fecha.desc&limit=100`, {headers}).then(r => r.json())
+            ]);
+            appData.products = p || [];
+            appData.sales = s || [];
+            appData.logs = l || [];
+            renderEverything();
+        } catch(e) {
+            console.error("Error cargando datos");
         }
     }
 
-    function imprimir() {
-        const el = document.getElementById('factura-view');
-        html2pdf().from(el).set({ margin:0, filename:'FullHouse_Factura.pdf', html2canvas:{scale:3}, jsPDF:{format:'a4'} }).save();
+    function renderEverything() {
+        // Dropdown Catálogo
+        const sel = document.getElementById('select-catalog');
+        sel.innerHTML = '<option value="">-- Buscar Mueble --</option>';
+        
+        // Grid Inventario
+        const container = document.getElementById('inventory-container');
+        container.innerHTML = "";
+
+        appData.products.forEach(p => {
+            sel.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+            
+            const colorList = (p.colores || "").split(',').filter(c => c);
+            container.innerHTML += `
+                <div class="product-card">
+                    <img src="${p.imagen_url}" class="prod-img" onerror="this.src='https://via.placeholder.com/400x300?text=Sin+Imagen'">
+                    <div style="padding: 20px;">
+                        <h3 style="margin:0">${p.nombre}</h3>
+                        <p style="color:var(--gold); font-weight:bold; font-size:18px;">RD$ ${parseFloat(p.precio_venta).toLocaleString()}</p>
+                        <div style="display:flex; gap:5px; margin-top:10px;">
+                            ${colorList.map(c => `<div class="color-bubble" style="background:${c}; width:20px; height:20px;"></div>`).join('')}
+                        </div>
+                        <button onclick="deleteProduct(${p.id})" style="margin-top:15px; background:none; border:none; color:red; cursor:pointer; font-size:11px; text-decoration:underline;">ELIMINAR ARTÍCULO</button>
+                    </div>
+                </div>`;
+        });
+
+        // Logs Terminal
+        document.getElementById('security-log').innerHTML = appData.logs.map(log => `
+            <div class="log-line">
+                [${new Date(log.fecha).toLocaleString()}] <b>${log.accion}</b> por ${log.usuario}<br>
+                ${log.detalles} | IP: ${log.ip}
+            </div>
+        `).join('');
+    }
+
+    // --- LÓGICA DE FACTURA ---
+    function updateFactura() {
+        document.getElementById('out-client').innerText = document.getElementById('in-client').value || "---";
+        document.getElementById('out-date').innerText = new Date().toLocaleDateString();
+        document.getElementById('out-id').innerText = "#FH-" + (appData.sales.length + 101);
+    }
+
+    function pullProductData() {
+        const id = document.getElementById('select-catalog').value;
+        const prod = appData.products.find(x => x.id == id);
+        if(prod) {
+            document.getElementById('out-prod-name').innerText = prod.nombre.toUpperCase();
+            document.getElementById('out-price').innerText = parseFloat(prod.precio_venta).toLocaleString();
+            document.getElementById('out-total').innerText = parseFloat(prod.precio_venta).toLocaleString();
+            document.getElementById('hidden-cost').value = prod.precio_compra;
+            
+            const colors = (prod.colores || "").split(',').filter(c => c);
+            document.getElementById('fact-color-options').innerHTML = colors.map(c => `
+                <div class="color-bubble" style="background:${c}" onclick="selectFactColor('${c}')"></div>
+            `).join('');
+        }
+    }
+
+    function selectFactColor(c) {
+        document.getElementById('out-prod-detail').innerText = "COLOR: " + c.toUpperCase();
+        document.getElementById('out-prod-detail').style.color = c;
+    }
+
+    function recalcTotal() {
+        const p = document.getElementById('out-price').innerText.replace(/,/g, '');
+        document.getElementById('out-total').innerText = parseFloat(p || 0).toLocaleString();
+    }
+
+    // --- NUEVO PRODUCTO ---
+    function addColorToTemp() {
+        if(selectedColors.length >= 10) return alert("Máximo 10 colores");
+        const c = document.getElementById('color-picker').value;
+        if(!selectedColors.includes(c)) {
+            selectedColors.push(c);
+            renderTempColors();
+        }
+    }
+
+    function renderTempColors() {
+        document.getElementById('temp-colors-box').innerHTML = selectedColors.map((c, i) => `
+            <div class="color-tag" onclick="selectedColors.splice(${i},1);renderTempColors()">
+                <div style="width:12px; height:12px; background:${c}; border-radius:50%"></div> ${c} ✕
+            </div>
+        `).join('');
+    }
+
+    async function uploadProduct() {
+        const payload = {
+            nombre: document.getElementById('reg-name').value,
+            precio_venta: document.getElementById('reg-price-v').value,
+            precio_compra: document.getElementById('reg-price-c').value,
+            imagen_url: document.getElementById('reg-img').value,
+            colores: selectedColors.join(',')
+        };
+
+        await fetch(`${SB_URL}/rest/v1/productos`, {
+            method: 'POST',
+            headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        selectedColors = [];
+        renderTempColors();
+        alert("Producto registrado correctamente");
+        loadCloudData();
+        switchPage('p-stock');
+    }
+
+    // --- UTILIDADES ---
+    function switchPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+function exportPDF() {
+    const element = document.getElementById('factura-container');
+    
+    const opt = {
+        margin: 0,
+        filename: `Factura_FullHouse.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            logging: false,
+            letterRendering: true,
+            windowHeight: element.scrollHeight // Captura solo el alto real del elemento
+        },
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait',
+            compress: true
+        }
+    };
+
+    // Usamos el método worker para asegurar que no se creen páginas extra
+    html2pdf().from(element).set(opt).toPdf().get('pdf').then(function (pdf) {
+        var totalPages = pdf.internal.getNumberOfPages();
+        if (totalPages > 1) {
+            pdf.deletePage(totalPages); // Borra la página en blanco si se crea
+        }
+    }).save();
+}
+
+    async function deleteProduct(id) {
+        if(confirm("¿Seguro que desea eliminar este artículo?")) {
+            await fetch(`${SB_URL}/rest/v1/productos?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+            });
+            loadCloudData();
+        }
+    }
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FullHouseRD | Enterprise Suite 2026</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --gold: #C5A059; 
+            --dark: #121212; 
+            --light-gold: #e5c17e;
+            --bg: #fdfdfd; 
+        }
+
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--dark); 
+            overflow-x: hidden;
+        }
+
+        /* --- PANTALLA DE LOGIN --- */
+        #login-screen { 
+            position: fixed; 
+            inset: 0; 
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%); 
+            z-index: 10000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .login-box { 
+            background: white; 
+            padding: 50px; 
+            border-radius: 20px; 
+            border: 2px solid var(--gold); 
+            text-align: center; 
+            width: 380px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        /* --- NAVEGACIÓN --- */
+        nav { 
+            background: var(--dark); 
+            padding: 15px 40px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 999; 
+            border-bottom: 3px solid var(--gold); 
+        }
+
+        .nav-logo { 
+            color: var(--gold); 
+            font-family: 'Playfair Display'; 
+            font-size: 28px; 
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .nav-links button { 
+            background: transparent; 
+            border: 1px solid var(--gold); 
+            color: var(--gold); 
+            padding: 10px 18px; 
+            cursor: pointer; 
+            margin-left: 10px; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 12px; 
+            transition: all 0.3s ease;
+        }
+
+        .nav-links button:hover { 
+            background: var(--gold); 
+            color: white; 
+        }
+
+        /* --- ESTRUCTURA DE PÁGINAS --- */
+        .page { display: none; padding: 40px; max-width: 1500px; margin: auto; animation: slideUp 0.5s ease; }
+        .active { display: block; }
+
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        .card { 
+            background: white; 
+            padding: 35px; 
+            border-radius: 15px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08); 
+            border-top: 6px solid var(--gold); 
+        }
+
+        .grid-layout { display: grid; grid-template-columns: 420px 1fr; gap: 40px; }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 12px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 10px; 
+            box-sizing: border-box;
+            font-family: 'Montserrat';
+        }
+
+        .btn-action { 
+            background: var(--gold); 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            cursor: pointer; 
+            font-weight: bold; 
+            border-radius: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        /* --- DISEÑO DE LA FACTURA --- */
+#factura-container { 
+    width: 210mm; 
+    min-height: 250mm; /* Bajamos de 270 a 250 para dar aire abajo */
+    background: white; 
+    padding: 10mm 15mm; /* Reducimos el margen superior/inferior */
+    margin: auto; 
+    color: black; 
+    box-sizing: border-box;
+    overflow: hidden; /* Evita que crezca de más por error */
+}
+
+        .f-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            border-bottom: 3px solid var(--gold); 
+            padding-bottom: 25px; 
+        }
+
+        .f-logo-text { font-family: 'Playfair Display'; font-size: 45px; color: var(--gold); margin: 0; }
+
+        .editable { padding: 3px; border-radius: 4px; transition: 0.2s; }
+        .editable:hover { background: #fffbe6; outline: 1px dashed var(--gold); cursor: pointer; }
+
+        .f-table { width: 100%; border-collapse: collapse; margin: 40px 0; }
+        .f-table th { background: var(--gold); color: white; padding: 15px; text-align: left; font-size: 13px; letter-spacing: 1px; }
+        .f-table td { padding: 20px 15px; border-bottom: 1px solid #eee; font-size: 15px; vertical-align: top; }
+
+        /* --- SISTEMA DE COLORES RGB --- */
+        .color-selector { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+        .color-bubble { 
+            width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; transition: 0.3s;
+        }
+        .color-bubble:hover { transform: scale(1.2); }
+        .color-tag { 
+            background: #f0f0f0; padding: 6px 12px; border-radius: 20px; font-size: 11px;
+            display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid #ddd;
+        }
+
+        /* --- LOGS DE SEGURIDAD --- */
+        .security-terminal { 
+            background: #0a0a0a; color: #00ff41; padding: 25px; border-radius: 12px; 
+            font-family: 'Courier New', monospace; font-size: 12px; max-height: 550px; 
+            overflow-y: auto; border: 1px solid #333; line-height: 1.6;
+        }
+        .log-line { border-bottom: 1px solid #1a1a1a; padding: 12px 0; }
+        .log-line b { color: var(--gold); }
+
+        /* --- INVENTARIO --- */
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+        .product-card { 
+            background: white; border-radius: 15px; overflow: hidden; border: 1px solid #eee;
+            transition: 0.3s; position: relative;
+        }
+        .product-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .prod-img { width: 100%; height: 220px; object-fit: cover; background: #fafafa; }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-box">
+        <h1 style="font-family:'Playfair Display'; color:var(--gold); margin:0">FullHouseRD</h1>
+        <p style="letter-spacing: 3px; font-size: 10px; color: #888; margin-top: 5px;">SISTEMA DE CONTROL 2026</p>
+        <div style="margin-top: 30px;">
+            <input type="text" id="user-input" placeholder="Nombre de Usuario">
+            <input type="password" id="pass-input" placeholder="Contraseña">
+            <button class="btn-action" onclick="attemptLogin()">Iniciar Sesión</button>
+        </div>
+    </div>
+</div>
+
+<nav>
+    <div class="nav-logo">FullHouse<span style="color:white">RD</span></div>
+    <div class="nav-links">
+        <button onclick="switchPage('p-facturacion')">Ventas/Factura</button>
+        <button onclick="switchPage('p-crear')">+ Nuevo Producto</button>
+        <button onclick="switchPage('p-stock')">Inventario</button>
+        <button onclick="switchPage('p-logs')" style="border-color: #ff4444; color: #ff4444;">Seguridad</button>
+    </div>
+</nav>
+
+<div id="p-facturacion" class="page active">
+    <div class="grid-layout">
+        <div class="card">
+            <h2 style="font-family:'Playfair Display'">Panel de Control</h2>
+            <label>Nombre del Cliente</label>
+            <input type="text" id="in-client" oninput="updateFactura()" placeholder="Ej: Juan Pérez">
+            
+            <label>Seleccionar del Catálogo</label>
+            <select id="select-catalog" onchange="pullProductData()"></select>
+            
+            <div id="fact-color-options" class="color-selector"></div>
+            
+            <input type="hidden" id="hidden-cost">
+            
+            <button class="btn-action" onclick="exportPDF()">Generar PDF Profesional</button>
+            <button class="btn-action" style="background:#222;" onclick="saveTransaction()">Registrar en Base de Datos</button>
+        </div>
+
+        <div id="factura-container">
+            <div class="f-header">
+                <div>
+                    <h1 class="f-logo-text">FullHouseRD</h1>
+                    <div contenteditable="true" class="editable" style="letter-spacing: 4px; font-size: 11px;">MUEBLES & INTERIORISMO</div>
+                </div>
+                <div style="text-align:right; font-size:12px; line-height: 1.6;">
+                    <strong contenteditable="true" class="editable">INVERSIONES FULL HOUSE SRL</strong><br>
+                    RNC: <span contenteditable="true" class="editable">131-73678-5</span><br>
+                    <span contenteditable="true" class="editable">Santo Domingo, República Dominicana</span>
+                </div>
+            </div>
+
+            <div style="margin: 50px 0; display: flex; justify-content: space-between; font-size: 14px;">
+                <div>
+                    <strong>CLIENTE:</strong> <span id="out-client" contenteditable="true" class="editable" style="text-transform: uppercase;">---</span><br>
+                    <strong>FECHA:</strong> <span id="out-date" contenteditable="true" class="editable">--/--/----</span>
+                </div>
+                <div style="text-align: right;">
+                    <strong>FACTURA:</strong> <span id="out-id" contenteditable="true" class="editable">#FH-100</span><br>
+                    <strong>NCF:</strong> <span contenteditable="true" class="editable">B0200008733</span>
+                </div>
+            </div>
+
+            <table class="f-table">
+                <thead>
+                    <tr>
+                        <th style="width: 65%;">DESCRIPCIÓN DEL ARTÍCULO</th>
+                        <th style="text-align: right;">TOTAL RD$</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div id="out-prod-name" contenteditable="true" class="editable" style="font-weight: bold; font-size: 18px;">SELECCIONE PRODUCTO</div>
+                            <div id="out-prod-detail" contenteditable="true" class="editable" style="color: #666; font-size: 13px; margin-top: 5px;">Detalles adicionales, dimensiones o color...</div>
+                        </td>
+                        <td style="text-align: right; font-weight: bold; font-size: 20px;">
+                            RD$ <span id="out-price" contenteditable="true" class="editable" oninput="recalcTotal()">0.00</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+<div style="float: right; text-align: right; width: 100%;">
+    <div style="font-size: 30px; color: var(--gold); font-weight: bold; margin-top: 10px;">
+        TOTAL: RD$ <span id="out-total">0.00</span>
+    </div>
+</div>
+
+<div style="clear: both; margin-top: 50px;"> <div contenteditable="true" class="editable" style="font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px;">
+        NOTAS: Garantía de 1 año. No se aceptan devoluciones en pedidos especiales.
+    </div>
+    <div class="signature-space" style="margin-top: 40px; border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px; font-size: 13px;">
+        Firma Autorizada
+    </div>
+</div>
+        </div>
+    </div>
+</div>
+
+<div id="p-crear" class="page">
+    <div class="card" style="max-width: 650px; margin: auto;">
+        <h2 style="font-family:'Playfair Display'">Registro de Nuevo Artículo</h2>
+        <input type="text" id="reg-name" placeholder="Nombre del Mueble (Ej: Sofa Chesterfield)">
+        <input type="number" id="reg-price-v" placeholder="Precio de Venta (RD$)">
+        <input type="number" id="reg-price-c" placeholder="Costo de Adquisición (RD$)">
+        <input type="text" id="reg-img" placeholder="URL de la imagen (Web)">
+        
+        <div style="margin-top: 20px;">
+            <label><strong>Selector de Colores (Hasta 10):</strong></label>
+            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <input type="color" id="color-picker" style="width: 100px; height: 50px; cursor: pointer; border: none; background: none;">
+                <button class="btn-action" style="width: auto; padding: 0 30px;" onclick="addColorToTemp()">Añadir Color</button>
+            </div>
+            <div id="temp-colors-box" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;"></div>
+        </div>
+
+        <button class="btn-action" style="margin-top: 30px;" onclick="uploadProduct()">Guardar en el Inventario Cloud</button>
+    </div>
+</div>
+
+<div id="p-stock" class="page">
+    <h2 style="font-family:'Playfair Display'; margin-bottom: 30px;">Inventario en Tiempo Real</h2>
+    <div id="inventory-container" class="inventory-grid"></div>
+</div>
+
+<div id="p-logs" class="page">
+    <div class="card">
+        <h2 style="font-family:'Playfair Display'">Terminal de Auditoría y Seguridad</h2>
+        <div id="security-log" class="security-terminal"></div>
+    </div>
+</div>
+
+<script>
+    // --- CREDENCIALES SUPABASE ---
+    const SB_URL = "https://nkelcfhqnpcrejakvfpi.supabase.co"; 
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rZWxjZmhxbnBjcmVqYWt2ZnBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MDI3MDUsImV4cCI6MjA4NDE3ODcwNX0.hWcpzsKVUtQ1zOk1GeG5fJuKKoXGM-vp-KHP5_3xUIQ"; // Asegúrate de poner tu llave real aquí
+
+    let appData = { products: [], sales: [], logs: [] };
+    let selectedColors = [];
+
+    // --- SEGURIDAD Y LOGIN ---
+    async function attemptLogin() {
+        const u = document.getElementById('user-input').value;
+        const p = document.getElementById('pass-input').value;
+
+        if(u === 'fullhouserd' && p === 'admin') {
+            document.getElementById('login-screen').style.display = 'none';
+            await registerSecurityLog("LOGIN EXITOSO", u);
+            loadCloudData();
+        } else {
+            alert("Acceso No Autorizado");
+        }
+    }
+
+    async function registerSecurityLog(action, user) {
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            const geo = await response.json();
+            
+            const logEntry = {
+                usuario: user,
+                accion: action,
+                detalles: `País: ${geo.country_name}, Región: ${geo.region}, Ciudad: ${geo.city}, ISP: ${geo.org}, Disp: ${navigator.platform}`,
+                ip: geo.ip
+            };
+
+            await fetch(`${SB_URL}/rest/v1/logs`, {
+                method: 'POST',
+                headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(logEntry)
+            });
+        } catch (e) {
+            console.warn("Log local activado - Error de conexión nube");
+        }
+    }
+
+    // --- CARGA DE DATOS ---
+    async function loadCloudData() {
+        const headers = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
+        try {
+            const [p, s, l] = await Promise.all([
+                fetch(`${SB_URL}/rest/v1/productos?order=id.desc`, {headers}).then(r => r.json()),
+                fetch(`${SB_URL}/rest/v1/ventas?order=id.desc`, {headers}).then(r => r.json()),
+                fetch(`${SB_URL}/rest/v1/logs?order=fecha.desc&limit=100`, {headers}).then(r => r.json())
+            ]);
+            appData.products = p || [];
+            appData.sales = s || [];
+            appData.logs = l || [];
+            renderEverything();
+        } catch(e) {
+            console.error("Error cargando datos");
+        }
+    }
+
+    function renderEverything() {
+        // Dropdown Catálogo
+        const sel = document.getElementById('select-catalog');
+        sel.innerHTML = '<option value="">-- Buscar Mueble --</option>';
+        
+        // Grid Inventario
+        const container = document.getElementById('inventory-container');
+        container.innerHTML = "";
+
+        appData.products.forEach(p => {
+            sel.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+            
+            const colorList = (p.colores || "").split(',').filter(c => c);
+            container.innerHTML += `
+                <div class="product-card">
+                    <img src="${p.imagen_url}" class="prod-img" onerror="this.src='https://via.placeholder.com/400x300?text=Sin+Imagen'">
+                    <div style="padding: 20px;">
+                        <h3 style="margin:0">${p.nombre}</h3>
+                        <p style="color:var(--gold); font-weight:bold; font-size:18px;">RD$ ${parseFloat(p.precio_venta).toLocaleString()}</p>
+                        <div style="display:flex; gap:5px; margin-top:10px;">
+                            ${colorList.map(c => `<div class="color-bubble" style="background:${c}; width:20px; height:20px;"></div>`).join('')}
+                        </div>
+                        <button onclick="deleteProduct(${p.id})" style="margin-top:15px; background:none; border:none; color:red; cursor:pointer; font-size:11px; text-decoration:underline;">ELIMINAR ARTÍCULO</button>
+                    </div>
+                </div>`;
+        });
+
+        // Logs Terminal
+        document.getElementById('security-log').innerHTML = appData.logs.map(log => `
+            <div class="log-line">
+                [${new Date(log.fecha).toLocaleString()}] <b>${log.accion}</b> por ${log.usuario}<br>
+                ${log.detalles} | IP: ${log.ip}
+            </div>
+        `).join('');
+    }
+
+    // --- LÓGICA DE FACTURA ---
+    function updateFactura() {
+        document.getElementById('out-client').innerText = document.getElementById('in-client').value || "---";
+        document.getElementById('out-date').innerText = new Date().toLocaleDateString();
+        document.getElementById('out-id').innerText = "#FH-" + (appData.sales.length + 101);
+    }
+
+    function pullProductData() {
+        const id = document.getElementById('select-catalog').value;
+        const prod = appData.products.find(x => x.id == id);
+        if(prod) {
+            document.getElementById('out-prod-name').innerText = prod.nombre.toUpperCase();
+            document.getElementById('out-price').innerText = parseFloat(prod.precio_venta).toLocaleString();
+            document.getElementById('out-total').innerText = parseFloat(prod.precio_venta).toLocaleString();
+            document.getElementById('hidden-cost').value = prod.precio_compra;
+            
+            const colors = (prod.colores || "").split(',').filter(c => c);
+            document.getElementById('fact-color-options').innerHTML = colors.map(c => `
+                <div class="color-bubble" style="background:${c}" onclick="selectFactColor('${c}')"></div>
+            `).join('');
+        }
+    }
+
+    function selectFactColor(c) {
+        document.getElementById('out-prod-detail').innerText = "COLOR: " + c.toUpperCase();
+        document.getElementById('out-prod-detail').style.color = c;
+    }
+
+    function recalcTotal() {
+        const p = document.getElementById('out-price').innerText.replace(/,/g, '');
+        document.getElementById('out-total').innerText = parseFloat(p || 0).toLocaleString();
+    }
+
+    // --- NUEVO PRODUCTO ---
+    function addColorToTemp() {
+        if(selectedColors.length >= 10) return alert("Máximo 10 colores");
+        const c = document.getElementById('color-picker').value;
+        if(!selectedColors.includes(c)) {
+            selectedColors.push(c);
+            renderTempColors();
+        }
+    }
+
+    function renderTempColors() {
+        document.getElementById('temp-colors-box').innerHTML = selectedColors.map((c, i) => `
+            <div class="color-tag" onclick="selectedColors.splice(${i},1);renderTempColors()">
+                <div style="width:12px; height:12px; background:${c}; border-radius:50%"></div> ${c} ✕
+            </div>
+        `).join('');
+    }
+
+    async function uploadProduct() {
+        const payload = {
+            nombre: document.getElementById('reg-name').value,
+            precio_venta: document.getElementById('reg-price-v').value,
+            precio_compra: document.getElementById('reg-price-c').value,
+            imagen_url: document.getElementById('reg-img').value,
+            colores: selectedColors.join(',')
+        };
+
+        await fetch(`${SB_URL}/rest/v1/productos`, {
+            method: 'POST',
+            headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        selectedColors = [];
+        renderTempColors();
+        alert("Producto registrado correctamente");
+        loadCloudData();
+        switchPage('p-stock');
+    }
+
+    // --- UTILIDADES ---
+    function switchPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+function exportPDF() {
+    const element = document.getElementById('factura-container');
+    
+    const opt = {
+        margin: 0,
+        filename: `Factura_FullHouse.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            logging: false,
+            letterRendering: true,
+            windowHeight: element.scrollHeight // Captura solo el alto real del elemento
+        },
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait',
+            compress: true
+        }
+    };
+
+    // Usamos el método worker para asegurar que no se creen páginas extra
+    html2pdf().from(element).set(opt).toPdf().get('pdf').then(function (pdf) {
+        var totalPages = pdf.internal.getNumberOfPages();
+        if (totalPages > 1) {
+            pdf.deletePage(totalPages); // Borra la página en blanco si se crea
+        }
+    }).save();
+}
+
+    async function deleteProduct(id) {
+        if(confirm("¿Seguro que desea eliminar este artículo?")) {
+            await fetch(`${SB_URL}/rest/v1/productos?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+            });
+            loadCloudData();
+        }
     }
 </script>
 </body>
